@@ -7,7 +7,6 @@ class Character
         get { return name; }
         set { name = value; }
     }
-
     public int BaseStrength
     { get; set; }
     public double CurrentHealth
@@ -37,7 +36,7 @@ class Character
             return BaseHealth + bonus;
         }
     }
-    // New Character Constructor
+    // New Character Constructor want to add default values for name
     public Character(string name)
     {
         Name = name;
