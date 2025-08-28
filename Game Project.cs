@@ -1,6 +1,6 @@
-﻿// Week1 Special Project.cs
-// This is a special project for Week 1 of the course. Create a short story with user interactive input.
-// Author note: Yeah I went overboard on this one. But hey! It was fun!
+﻿/* Week1 Special Project.cs
+    This is a special project for Week 1 of the course. Create a short story with user interactive input.
+    Author note: Yeah I went overboard on this one. But hey! It was fun! */
 
 using System;
 using System.Collections.Generic;
@@ -15,12 +15,12 @@ namespace GameProject
     class Game_Project
     {
         // Readability helper methods
-        public static void Pause()
+        public static void Pause() // Utility method to pause the console
         {
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
         }
-        public static void SlowWrite(string text, int delay = 15)
+        public static void SlowWrite(string text, int delay = 10) // Default delay of 10ms
         {
             foreach (char c in text)
             {

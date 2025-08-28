@@ -45,13 +45,21 @@ class Character
         Gold = 100; // Starting gold
         Inventory = new Item[10]; // Initialize an array with 10 empty item slots
     }
+    public Character()
+    {
+        Name = "Player1"; // Default name if none provided
+        BaseStrength = 5;
+        CurrentHealth = BaseHealth;
+        Gold = 100;
+        Inventory = new Item[10]; // Initialize an array with 10 empty item slots
+    }
 
     //  Character Methods
-    public bool IsAlive()
+    public bool IsAlive() //returns true if CurrentHealth > 0
     {
         return CurrentHealth > 0;
     }
-    public void TakeDamage(double damageAmount)
+    public void TakeDamage(double damageAmount) // reduces CurrentHealth by damageAmount, not going below 0
     {
         CurrentHealth -= damageAmount;
         if (CurrentHealth < 0)

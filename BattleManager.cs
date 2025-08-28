@@ -1,11 +1,16 @@
 class BattleManager
 {
-    public static void Pause()
+    public static void Pause() // Utility method to pause the console
     {
         Console.WriteLine("Press Enter to continue...");
         Console.ReadLine();
     }
-    internal static Random rand = new Random();
+    internal static Random rand = new Random(); // Random number generator
+    /// <summary>
+    /// Rolls a dice with the specified number of sides.
+    /// </summary>
+    /// <param name="sides">The number of sides on the dice.</param>
+    /// <returns>A random number between 1 and the specified number of sides.</returns>
     public static int RollDice(int sides)
     {
         return rand.Next(1, sides + 1);
