@@ -1,5 +1,10 @@
 class BattleManager
 {
+    public static void Pause()
+    {
+        Console.WriteLine("Press Enter to continue...");
+        Console.ReadLine();
+    }
     internal static Random rand = new Random();
     public static int RollDice(int sides)
     {
@@ -35,11 +40,11 @@ class BattleManager
                         {
                             enemy.Attack(player);
                         }
-                        Console.ReadLine();
+                        Pause();
                         break;
                     case 2: // Flee
                         Console.WriteLine("You try to flee...");
-                        // Pause(1);
+                        Pause();
                         if (BattleManager.RollDice(20) > 10) // 50% chance to flee
                         {
                             Console.WriteLine("You successfully escaped!");
