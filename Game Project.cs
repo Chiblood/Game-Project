@@ -229,80 +229,80 @@ namespace GameProject
                     }
                     return;
                 }
-                else
+            }
+            else
+            {
+
+                switch (true)
                 {
+                    case bool _ when player.CurrentHealth <= player.MaxHealth * 0.3: // Low health (30% or less)
+                        SlowWrite("\"You look like you're in rough shape,\" he says, performing a quick ritual.");
+                        double healthRestored = player.MaxHealth * 0.5; // Restore 50% of max health
+                        player.CurrentHealth += healthRestored;
+                        // Clamp health to the max health. Math.Min is a clean way to do this.
+                        player.CurrentHealth = Math.Min(player.CurrentHealth, player.MaxHealth);
+                        Console.WriteLine($"You feel a surge of vitality! Your health is now {player.CurrentHealth:F1}.");
+                        break;
 
-                    switch (true)
-                    {
-                        case bool _ when player.CurrentHealth <= player.MaxHealth * 0.3: // Low health (30% or less)
-                            SlowWrite("\"You look like you're in rough shape,\" he says, performing a quick ritual.");
-                            double healthRestored = player.MaxHealth * 0.5; // Restore 50% of max health
-                            player.CurrentHealth += healthRestored;
-                            // Clamp health to the max health. Math.Min is a clean way to do this.
-                            player.CurrentHealth = Math.Min(player.CurrentHealth, player.MaxHealth);
-                            Console.WriteLine($"You feel a surge of vitality! Your health is now {player.CurrentHealth:F1}.");
-                            break;
+                    case bool _ when player.CurrentHealth <= player.MaxHealth * 0.80: // Medium health
+                        SlowWrite("Fate will decide your path.");
+                        // Use the shared Random instance and an if/else if chain for clarity.
+                        int roll = BattleManager.RollDice(20); // d20 roll (1 to 20)
+                        if (roll <= 5)// Rolls 1-5 (25% chance) Attacks the player
+                        {
+                            SlowWrite("\"You look a bit weak,\" he says with a hungry look in his eyes... He attacks!");
+                            Character figure = new Character("Mysterious Figure") { BaseStrength = 8, CurrentHealth = 50 };
 
-                        case bool _ when player.CurrentHealth <= player.MaxHealth * 0.80: // Medium health
-                            SlowWrite("Fate will decide your path.");
-                            // Use the shared Random instance and an if/else if chain for clarity.
-                            int roll = BattleManager.RollDice(20); // d20 roll (1 to 20)
-                            if (roll <= 5)// Rolls 1-5 (25% chance) Attacks the player
+                            if (BattleManager.StartCombat(player, figure))
                             {
-                                SlowWrite("\"You look a bit weak,\" he says with a hungry look in his eyes... He attacks!");
-                                Character figure = new Character("Mysterious Figure") { BaseStrength = 8, CurrentHealth = 50 };
-
-                                if (BattleManager.StartCombat(player, figure))
-                                {
-                                    SlowWrite("\"You have defeated the mysterious figure and taken his belongings!\"");
-                                    Item figureLoot = new("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
-                                    player.AddItemToInventory(figureLoot);
-                                    player.AddGold(15);
-                                    return;
-                                }
+                                SlowWrite("\"You have defeated the mysterious figure and taken his belongings!\"");
+                                Item figureLoot = new("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
+                                player.AddItemToInventory(figureLoot);
+                                player.AddGold(15);
+                                return;
                             }
-                            else if (roll <= 10) // Rolls 6-10 (25% chance) Offers to sell a potion
+                        }
+                        else if (roll <= 10) // Rolls 6-10 (25% chance) Offers to sell a potion
+                        {
+                            SlowWrite("\"I'll sell you a health potion if you need it friend,\" he says, profering you a potion.");
+                            Item healthPotion = new Item("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
+                            Pause();
+                            Console.Write("Do you want to buy the health potion for 10 gold? (yes/no): ");
+                            string response = Console.ReadLine()?.Trim().ToLower() ?? "no";
+                            if (response == "yes")
                             {
-                                SlowWrite("\"I'll sell you a health potion if you need it friend,\" he says, profering you a potion.");
-                                Item healthPotion = new Item("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
-                                Pause();
-                                Console.Write("Do you want to buy the health potion for 10 gold? (yes/no): ");
-                                string response = Console.ReadLine()?.Trim().ToLower() ?? "no";
-                                if (response == "yes")
+                                if (player.SpendGold(10))
                                 {
-                                    if (player.SpendGold(10))
-                                    {
-                                        player.AddItemToInventory(healthPotion);
-                                        Console.WriteLine("You purchased the health potion.");
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("You don't have enough gold to buy the potion.");
-                                    }
+                                    player.AddItemToInventory(healthPotion);
+                                    Console.WriteLine("You purchased the health potion.");
                                 }
                                 else
                                 {
-                                    Console.WriteLine("You declined the offer.");
+                                    Console.WriteLine("You don't have enough gold to buy the potion.");
                                 }
                             }
-                            else if (roll <= 18) // Rolls 11-18 (40% chance) Compliments the player
+                            else
                             {
-                                SlowWrite("\"You look strong,\" he says, and continues on his way.");
+                                Console.WriteLine("You declined the offer.");
+                            }
+                        }
+                        else if (roll <= 18) // Rolls 11-18 (40% chance) Compliments the player
+                        {
+                            SlowWrite("\"You look strong,\" he says, and continues on his way.");
 
-                            }
-                            else // Rolls 19-20 (10% chance) Gives the player a strength-boosting item
-                            {
-                                SlowWrite("Without a word, he hands you a strange, glowing stone.");
-                                player.AddItemToInventory(new Item("Glowing Stone", "A stone that pulses with raw power.", strengthBonus: 2));
-                            }
-                            break;
-                        default: // High health, he just ignores the player
-                            SlowWrite("He returns his gaze to the road and continues on his way.");
-                            break;
-                    }
-                    figureEncounters++; // Increment the encounter counter
-                    Pause();
+                        }
+                        else // Rolls 19-20 (10% chance) Gives the player a strength-boosting item
+                        {
+                            SlowWrite("Without a word, he hands you a strange, glowing stone.");
+                            player.AddItemToInventory(new Item("Glowing Stone", "A stone that pulses with raw power.", strengthBonus: 2));
+                        }
+                        break;
+                    default: // High health, he just ignores the player
+                        SlowWrite("He returns his gaze to the road and continues on his way.");
+                        break;
                 }
+                figureEncounters++; // Increment the encounter counter
+                Pause();
             }
         }
         private static void TownShop(Character player) // Shop Menu
