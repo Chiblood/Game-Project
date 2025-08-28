@@ -17,8 +17,7 @@ namespace GameProject
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
         }
-
-        public static void SlowWrite(string text, int delay = 30)
+        public static void SlowWrite(string text, int delay = 20)
         {
             foreach (char c in text)
             {
@@ -30,6 +29,7 @@ namespace GameProject
 
         // State-tracking variables
         private static int dragonVisits = 0;
+        private static bool beatGoblin = false;
         private static bool learnedDragonStory = false;
         private static bool silentDragonEncounter = false;
 
@@ -82,16 +82,24 @@ namespace GameProject
                 SlowWrite("\"~~~You return.~~~\" the dragon rumbles, smoke curling from his nostrils.");
                 Console.WriteLine("1. Ask for his story: ");
                 Console.WriteLine("2. Stay silent.");
-                Console.WriteLine("3. Say 'I am the mighty hero!' and attack the dragon.");
+                if (learnedDragonStory)
+                {
+                    Console.WriteLine("3. 'I have come to release you from this nightmare.' and attack the dragon.");
+                }
+                else
+                {
+                    Console.WriteLine("3. (Attack the dragon)");
+                }
                 Console.Write("Enter your choice: ");
                 string choice = Console.ReadLine() ?? "1";
-                switch (choice) // Second Meeting Choices
+                switch (choice) // After First Meeting Choices
                 {
                     case "1": // Ask for his story
                         SlowWrite("\"Ah, a curious one,\" the dragon rumbles, his voice like grinding stones. \"They call me Ignis. I was not always a prisoner of this damp cave.\"");
                         SlowWrite("\"Ages ago, I guarded the Sunstone of Valoria. A jealous archmage, unable to defeat me in open combat, laid a curse upon me.\"");
-                        SlowWrite("\"I am bound here until a hero proves their worth not by the strength of their arm, but by the wisdom of their heart.\"");
+                        SlowWrite("\"I am bound here until a hero proves their worth by the strength of their arm.\"");
                         SlowWrite("He gestures toward the amulet you carry. \"That you did not attack me on sight is a good sign. But the curse is strong. You must become stronger to break it.\"");
+                        learnedDragonStory = true;
                         Pause();
                         break;
                     case "2": // Stay silent
@@ -100,6 +108,7 @@ namespace GameProject
                             SlowWrite("\"~~~AGAIN you come in silence!?~~~\" he rumbles, his voice thick with menace. \"~~~THIS IS YOUR LAST CHANCE. SPEAK OR FACE MY WRATH!~~~\"");
                             Pause();
                         }
+                        silentDragonEncounter = true; // Mark that the player has chosen silence again
                         Console.WriteLine("1. \"My apologies, great one. I wish to hear your story.\"");
                         Console.WriteLine("2. (Stay silent)");
                         Console.Write("Enter your choice: ");
@@ -108,6 +117,9 @@ namespace GameProject
                         {
                             SlowWrite("\"Hmph. Very well,\" he snorts, a puff of smoke escaping his nostrils. \"They call me Ignis...\"");
                             SlowWrite("He seems mollified and proceeds to tell you his tale, though his gaze remains burning on you.");
+                            SlowWrite("His voice like grinding stones. \"They call me Ignis. I was not always a prisoner of this damp cave.\"");
+                            SlowWrite("\"Ages ago, I guarded the Sunstone of Valoria. A jealous archmage, unable to defeat me in open combat, laid a curse upon me.\"");
+                            SlowWrite("\"I am bound here until a hero proves their worth by the strength of their arm.\"");
                             Pause();
                         }
                         else
@@ -117,11 +129,18 @@ namespace GameProject
                         }
                         break;
                     case "3": // Attack the dragon
-                        SlowWrite("\"Foolish mortal!\" the dragon roars, and incinerates you with a blast of fire.");
-                        player.CurrentHealth = 0; // Player dies
+                        if (learnedDragonStory)
+                        {
+                            SlowWrite($"~~~\"Thank you {player.Name}!~~~\" the Ignis roars, and meets you in battle.");
+                        }
+                        else
+                        {
+                            SlowWrite("The Dragon Roars and meets you in Battle.");
+                        }
+                        BattleManager.StartCombat(player, new Character("Dragon") { BaseStrength = 10, CurrentHealth = 200 });
                         break;
                     default:
-                        SlowWrite("\"You hesitate, and the moment is lost,\" the dragon says, clearly annoyed. He flies away, uninterested in you.");
+                        SlowWrite("\"You hesitate, and the moment is lost,\" the dragon says, clearly annoyed. He turns away, uninterested in you.");
                         return;
                 }
             }
@@ -139,15 +158,15 @@ namespace GameProject
 
             if (player.IsAlive())
             {
-                SlowWrite($"\nYou have defeated the {goblin.Name}!");
+                SlowWrite($"\nYou have defeated the {goblin.Name} and picked up his weapon and coin pouch!");
                 Item goblinLoot = new Item("Crude Dagger", "A rusty but sharp dagger.", strengthBonus: 1);
                 player.AddItemToInventory(goblinLoot);
+                beatGoblin = true;
+                player.AddGold(20);
             }
         }
-
         private static void MysteriousFigure(Character player)
         {
-            SlowWrite("\nUnsure of where to go, you stand still...");
             SlowWrite("A mysterious traveler approaches you on the path. He looks you up and down...");
 
             // Use a switch with 'when' clauses for pattern matching based on health.
@@ -214,32 +233,94 @@ namespace GameProject
                     break;
             }
         }
+        private static void TownShop(Character player)
+        {
+            SlowWrite("\nYou enter the town shop. The shopkeeper greets you warmly.");
+            bool shopping = true;
+            while (shopping)
+            {
+                Console.WriteLine($"\nYour Gold: {player.Gold}");
+                Console.WriteLine("Shop Inventory:");
+                Console.WriteLine("1. Health Potion (Restores 30 health) - 30 Gold");
+                Console.WriteLine("2. Full Heal - 100 Gold");
+                Console.WriteLine("3. Exit Shop");
+                // Console.WriteLine("4. Talk to the shopkeeper.");
+                Console.Write("Enter the number of the item you want to buy, or '3' to exit: ");
+                string choice = Console.ReadLine() ?? "3";
+                switch (choice)
+                {
+                    case "1":
+                        if (player.SpendGold(30))
+                        {
+                            Item healthPotion = new Item("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
+                            player.AddItemToInventory(healthPotion);
+                            Console.WriteLine("You purchased a Health Potion.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("You don't have enough gold to buy that.");
+                        }
+                        break;
+                    case "2":
+                        if (player.SpendGold(100))
+                        {
+                            player.Heal(player.MaxHealth); // Fully heal the player
+                            Console.WriteLine("You were fully healed.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("You don't have enough gold to buy that.");
+                        }
+                        break;
+                    case "3":
+                        shopping = false; // Exit the shop
+                        break;
+                    default:
+                        Console.WriteLine("Invalid choice. Please select a valid option.");
+                        break;
+                }
+            }
+            SlowWrite("You leave the shop and return to the crossroads.");
+        }
         // Menu methods
         static void ShowInventoryMenu(Character player)
         {
-            Console.WriteLine($"\n--- {player.Name}'s Inventory ---");
-            bool hasItems = player.DisplayInventory();
+            bool hasItems = player.DisplayInventory(player);
             if (hasItems)
             {
                 Console.Write("Enter the number of the item to use, or '0' to go back: ");
                 if (int.TryParse(Console.ReadLine(), out int itemNumber) && itemNumber > 0)
                 {
                     // Adjust for 0-based array index
-                    player.UseItem(itemNumber - 1);
+                    player.UseItem(player, itemNumber - 1);
                 }
             }
+            Pause();
         }
-
         static bool ShowCrossroadsMenu(Character player)
         {
+            Console.Clear();
             Console.WriteLine($"\n--- Crossroads of Adventure ---");
             Console.WriteLine($"Health: {player.CurrentHealth:F1}/{player.MaxHealth:F1} | Strength: {player.TotalStrength}");
             Console.WriteLine("You find yourself at a crossroads. What do you do?");
-            Console.WriteLine("1. Go see a dragon.");
-            Console.WriteLine("2. Enter the goblin cave.");
+            if (learnedDragonStory)
+            {
+                Console.WriteLine("1. Go see Igis the dragon.");
+            }
+            else Console.WriteLine("1. Go towards a dragon cave.");
+
+            if (beatGoblin)
+            {
+                Console.WriteLine("2. Return to the goblin cave."); ;
+            }
+            else
+            {
+                Console.WriteLine("2. Go into a strange monster cave.");
+            }
             Console.WriteLine("3. Stand still and watch the road.");
             Console.WriteLine("4. Check Inventory.");
-            Console.WriteLine("5. Quit Game");
+            Console.WriteLine("5. Go to the town shop.");
+            Console.WriteLine("6. Quit Game");
             Console.Write("Enter your choice: ");
 
             if (int.TryParse(Console.ReadLine(), out int choice))
@@ -259,6 +340,9 @@ namespace GameProject
                         ShowInventoryMenu(player);
                         break;
                     case 5:
+                        TownShop(player);
+                        break;
+                    case 6:
                         return false; // Exit the game loop
                     default:
                         Console.WriteLine("Invalid choice. Please select a valid option.");
@@ -274,7 +358,7 @@ namespace GameProject
 
         static void Main(string[] args) // Entry point of the game
         {
-            SlowWrite("Welcome to Jacks Week1 Special Project!");
+            SlowWrite("Welcome to Jacks Game Project! This is a work in progress!");
             SlowWrite("This is an Adventure RPG!");
             Console.Write("Enter your character's name (press Enter for default): ");
             string playerNameInput = Console.ReadLine() ?? string.Empty;

@@ -115,6 +115,7 @@ class Character
     public bool DisplayInventory(Character character)
     {
         Console.WriteLine($"--- {character.Name}'s Inventory ---");
+        Console.WriteLine($"Gold: {character.Gold}");
         bool empty = true;
         for (int i = 0; i < character.Inventory.Length; i++)
         {
