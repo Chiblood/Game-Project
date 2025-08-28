@@ -1,0 +1,4 @@
+C:\Users\chibl\OneDrive\Documents\Learning Coding\MSSA\Week 1 Assignments\Game Project\obj\Debug\net9.0\Game Project.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\chibl\OneDrive\Documents\Learning Coding\MSSA\Week 1 Assignments\Game Project\obj\Debug\net9.0\Game Project.AssemblyInfoInputs.cache
+C:\Users\chibl\OneDrive\Documents\Learning Coding\MSSA\Week 1 Assignments\Game Project\obj\Debug\net9.0\Game Project.AssemblyInfo.cs
+C:\Users\chibl\OneDrive\Documents\Learning Coding\MSSA\Week 1 Assignments\Game Project\obj\Debug\net9.0\Game Project.csproj.CoreCompileInputs.cache
