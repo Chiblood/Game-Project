@@ -5,10 +5,17 @@ class BattleManager
     {
         return rand.Next(1, sides + 1);
     }
-    public static void StartCombat(Character player, Character enemy)
+    /// <summary>
+    /// Manages a turn-based combat loop between two characters.
+    /// </summary>
+    /// <returns>True if the player wins, false otherwise (loss or flee).</returns>
+    /// <param name="player">The player character.</param>
+    /// <param name="enemy">The enemy character.</param>
+    public static bool StartCombat(Character player, Character enemy)
     {
         Console.WriteLine($"A {enemy.Name} attacks!");
 
+        // Main combat loop
         while (player.IsAlive() && enemy.IsAlive())
         {
             Console.WriteLine("\n--- Combat ---");
@@ -28,6 +35,7 @@ class BattleManager
                         {
                             enemy.Attack(player);
                         }
+                        Console.ReadLine();
                         break;
                     case 2: // Flee
                         Console.WriteLine("You try to flee...");
@@ -35,7 +43,7 @@ class BattleManager
                         if (BattleManager.RollDice(20) > 10) // 50% chance to flee
                         {
                             Console.WriteLine("You successfully escaped!");
-                            return; // Exit the combat method
+                            return false; // Exit the combat method
                         }
                         Console.WriteLine("You failed to escape! The enemy attacks.");
                         enemy.Attack(player);
@@ -62,12 +70,14 @@ class BattleManager
                 enemy.Attack(player);
             }
         }
-    }
-    public static void Attack(Character attacker, Character target)
-    {
-        int damage = RollDice(6) + attacker.TotalStrength;
-        // The BattleManager orchestrates, but the Character handles its own state change.
-        target.TakeDamage(damage);
-        Console.WriteLine($"{attacker.Name} attacks {target.Name} for {damage} damage!");
+        if (player.IsAlive())
+        {
+            Console.WriteLine($"{player.Name} wins the battle!");
+            return true; // Player wins
+        }
+        else
+        {
+            return false; // Player has been defeated
+        }
     }
 }
