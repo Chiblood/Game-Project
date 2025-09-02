@@ -41,7 +41,7 @@ namespace GameProject
         private static void EncounterDragon(Character player) // Main Boss of the Game
         {
             dragonVisits++; // Increment the visit counter
-            SlowWrite("\nYou chose to go towards the massive dragon cave...");
+            Console.WriteLine("\nYou chose to go towards the massive dragon cave...");
             Console.WriteLine();
 
             if (dragonVisits == 1)
@@ -57,7 +57,7 @@ namespace GameProject
                 {
                     case "1": // Tell him your name
                         SlowWrite("\"~~~Ah, " + player.Name + ",\" he says. \"~~~I have been expecting you.~~~\"");
-                        SlowWrite("He seems pleased by your directness and drops a small, shimmering object at your feet.");
+                        Console.WriteLine("He seems pleased by your directness and drops a small, shimmering object at your feet.");
                         // Create an item that gives a +3 strength bonus
                         Item amulet = new Item("Dragon's Amulet", "A mystical amulet that hums with ancient power.", strengthBonus: 3);
                         player.AddItemToInventory(amulet);
