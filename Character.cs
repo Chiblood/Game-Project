@@ -45,16 +45,124 @@ class Character
         Gold = 100; // Starting gold
         Inventory = new Item[10]; // Initialize an array with 10 empty item slots
     }
-    public Character()
+    public Character() : this("Player1") // Default name if none provided
+    { }
+    public void Save()
     {
-        Name = "Player1"; // Default name if none provided
-        BaseStrength = 5;
-        CurrentHealth = BaseHealth;
-        Gold = 100;
-        Inventory = new Item[10]; // Initialize an array with 10 empty item slots
+        try
+        {
+            // Get the base directory where the application is running.
+            // This makes the save data portable with the game's folder.
+            string exePath = AppContext.BaseDirectory;
+            string saveDataPath = Path.Combine(exePath, "SaveData");
+            Directory.CreateDirectory(saveDataPath); // This ensures the directory exists.
+
+            Console.WriteLine($"Your character's data will be saved in: {saveDataPath}");
+            string fileName = $"{Name}_CharacterData.txt";
+            string fullPath = Path.Combine(saveDataPath, fileName);
+
+            using (StreamWriter writer = new(fullPath))
+            {
+                writer.WriteLine($"Name: {Name}");
+                writer.WriteLine($"Base Strength: {BaseStrength}");
+                writer.WriteLine($"Current Health: {CurrentHealth}");
+                writer.WriteLine($"Gold: {Gold}");
+                // Save inventory items
+                writer.WriteLine("[Inventory]"); // A header for the inventory section
+                foreach (var item in Inventory.Where(i => i != null))
+                {
+                    // Save all item properties in a pipe-delimited format for robust loading.
+                    writer.WriteLine($"{item!.Name}|{item.Description}|{item.StrengthBonus}|{item.HealingAmount}|{item.HealthBonus}|{item.IsConsumable}");
+                }
+            }
+            Console.WriteLine($"Character data saved to: {fullPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while saving character data: {ex.Message}");
+        }
+    }
+    public static Character Load(string name) // Factory method to load or create a character
+    {
+        try
+        {
+            string exePath = AppContext.BaseDirectory;
+            string saveDataPath = Path.Combine(exePath, "SaveData");
+            string fileName = $"{name}_CharacterData.txt";
+            string fullPath = Path.Combine(saveDataPath, fileName);
+
+            if (!File.Exists(fullPath))
+            {
+                Console.WriteLine("No saved data found for this character.");
+                return new Character(name); // Return a new character if no save file exists
+            }
+
+            var lines = File.ReadAllLines(fullPath);
+            var stats = new Dictionary<string, string>();
+            var inventoryLines = new List<string>();
+            bool readingInventory = false;
+
+            // First pass: separate stats from inventory for robust parsing
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (line.Trim() == "[Inventory]")
+                {
+                    readingInventory = true;
+                    continue;
+                }
+
+                if (readingInventory)
+                {
+                    inventoryLines.Add(line);
+                }
+                else
+                {
+                    var parts = line.Split(':', 2);
+                    if (parts.Length == 2)
+                    {
+                        stats[parts[0].Trim()] = parts[1].Trim();
+                    }
+                }
+            }
+
+            // Second pass: build the character object from the parsed stats
+            string characterName = stats.GetValueOrDefault("Name", name);
+            Character character = new Character(characterName);
+
+            character.BaseStrength = int.Parse(stats.GetValueOrDefault("Base Strength", "5"));
+            character.CurrentHealth = double.Parse(stats.GetValueOrDefault("Current Health", "100.0"));
+            character.Gold = int.Parse(stats.GetValueOrDefault("Gold", "0"));
+
+            // Third pass: build the inventory from the parsed item lines
+            foreach (var itemLine in inventoryLines)
+            {
+                var parts = itemLine.Split('|');
+                if (parts.Length == 6) // Name|Desc|Str|Heal|HealthBonus|Consumable
+                {
+                    Item item = new Item(
+                        name: parts[0],
+                        description: parts[1],
+                        strengthBonus: int.Parse(parts[2]),
+                        healingAmount: double.Parse(parts[3]),
+                        healthBonus: double.Parse(parts[4]),
+                        isConsumable: bool.Parse(parts[5])
+                    );
+                    character.AddItemToInventory(item);
+                }
+            }
+            Console.WriteLine($"Character data for '{character.Name}' loaded successfully.");
+            return character;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while loading character data: {ex.Message}");
+            // On failure, return a fresh character to prevent the game from crashing.
+            return new Character(name);
+        }
     }
 
-    //  Character Methods
+    //  Character stat Methods
     public bool IsAlive() //returns true if CurrentHealth > 0
     {
         return CurrentHealth > 0;
@@ -126,12 +234,10 @@ class Character
         bool empty = true;
         for (int i = 0; i < character.Inventory.Length; i++)
         {
-            if (character.Inventory[i] != null)
+            Item? item = character.Inventory[i];
+            if (item != null)
             {
-                if (character.Inventory[i] != null)
-                {
-                    Console.WriteLine($"{i + 1}. {character.Inventory[i]!.Name}: {character.Inventory[i]!.Description}");
-                }
+                Console.WriteLine($"{i + 1}. {item.Name}: {item.Description}");
                 empty = false;
             }
         }
@@ -142,6 +248,7 @@ class Character
         Console.WriteLine("------------------------");
         return !empty; // Return true if inventory has items, false if empty.
     }
+
     public void UseItem(Character character, int inventoryIndex)
     {
         // Validate index

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.IO;
 using System.Text;
 using System.Threading;
 
@@ -170,138 +171,114 @@ namespace GameProject
         private static void MysteriousFigure(Character player) // Random Encounter
         {
             SlowWrite("A mysterious traveler approaches you on the path. He looks you up and down...");
+            figureEncounters++; // Increment the encounter counter at the start for simpler logic.
 
-            // Use a switch with 'when' clauses for pattern matching based on health and figureEncounters.
-            if (figureEncounters > 2) // After 2 encounters, have more choices
+            // After 2 encounters, the traveler is different and the interaction changes.
+            if (figureEncounters > 2)
             {
-                SlowWrite("A new figure is at the crossroads. What will you do?");
-                Console.WriteLine("1. Greet the new figure.");
-                Console.WriteLine("2. Attack him.");
-                Console.WriteLine("3. Ignore him.");
-                Console.Write("Enter your choice:.");
-                string choice = Console.ReadLine() ?? "3";
-                if (choice == "1")
-                {
-                    if (player.CurrentHealth <= player.MaxHealth * 0.3) // Low health (30% or less)
-                    {
-                        SlowWrite("\"You look like you're in rough shape,\" he says, performing a quick ritual.");
-                        double healthRestored = player.MaxHealth * 0.5; // Restore 50% of max health
-                        player.CurrentHealth += healthRestored;
-                        // Clamp health to the max health. Math.Min is a clean way to do this.
-                        player.CurrentHealth = Math.Min(player.CurrentHealth, player.MaxHealth);
-                        Console.WriteLine($"You feel a surge of vitality! Your health is now {player.CurrentHealth:F1}.");
-                        return;
-                    }
+                HandleNewFigureEncounter(player);
+            }
+            else // First two encounters use the original logic
+            {
+                HandleFirstFigureEncounters(player);
+            }
+            Pause();
+        }
 
-                    int roll = BattleManager.RollDice(20); // d20 roll (1 to 20)
-                    if (roll <= 10) // Rolls 1-10 (25% chance) Offers to sell a potion
+        // Helper method to break up the logic of the MysteriousFigure encounter
+        private static void HandleFirstFigureEncounters(Character player)
+        {
+            if (player.CurrentHealth <= player.MaxHealth * 0.3) // Low health (30% or less)
+            {
+                SlowWrite("\"You look like you're in rough shape,\" he says, performing a quick ritual.");
+                double healthRestored = player.MaxHealth * 0.5; // Restore 50% of max health
+                player.CurrentHealth += healthRestored;
+                player.CurrentHealth = Math.Min(player.CurrentHealth, player.MaxHealth); // Clamp health
+                Console.WriteLine($"You feel a surge of vitality! Your health is now {player.CurrentHealth:F1}.");
+            }
+            else if (player.CurrentHealth <= player.MaxHealth * 0.80) // Medium health
+            {
+                SlowWrite("Fate will decide your path.");
+                int roll = BattleManager.RollDice(20); // d20 roll
+                if (roll <= 5) // 25% chance: Attacks the player
+                {
+                    SlowWrite("\"You look a bit weak,\" he says with a hungry look in his eyes... He attacks!");
+                    Character figure = new Character("Mysterious Figure") { BaseStrength = 8, CurrentHealth = 50 };
+                    if (BattleManager.StartCombat(player, figure))
                     {
-                        SlowWrite("\"I'll sell you a health potion if you need it friend,\" he says, profering you a potion.");
-                        Item healthPotion = new Item("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
-                        Pause();
-                        Console.Write("Do you want to buy the health potion for 10 gold? (yes/no): ");
-                        string response = Console.ReadLine()?.Trim().ToLower() ?? "no";
-                        if (response == "yes")
+                        SlowWrite("\"You have defeated the mysterious figure and taken his belongings!\"");
+                        Item figureLoot = new("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
+                        player.AddItemToInventory(figureLoot);
+                        player.AddGold(15);
+                    }
+                }
+                else if (roll <= 10) // 25% chance: Offers to sell a potion
+                {
+                    SlowWrite("\"I'll sell you a health potion if you need it friend,\" he says, profering a potion.");
+                    Item healthPotion = new Item("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
+                    Console.Write("Do you want to buy the health potion for 10 gold? (yes/no): ");
+                    string response = Console.ReadLine()?.Trim().ToLower() ?? "no";
+                    if (response == "yes")
+                    {
+                        if (player.SpendGold(10))
                         {
-                            if (player.SpendGold(10))
-                            {
-                                player.AddItemToInventory(healthPotion);
-                                Console.WriteLine("You purchased the health potion.");
-                            }
-                            else
-                            {
-                                Console.WriteLine("You don't have enough gold to buy the potion.");
-                            }
+                            player.AddItemToInventory(healthPotion);
+                            Console.WriteLine("You purchased the health potion.");
                         }
                         else
                         {
-                            Console.WriteLine("You declined the offer.");
+                            Console.WriteLine("You don't have enough gold to buy the potion.");
                         }
                     }
-                    else if (roll <= 18) // Rolls 11-18 (40% chance) Compliments the player
+                    else
                     {
-                        SlowWrite("\"You look strong,\" he says, and continues on his way.");
+                        Console.WriteLine("You declined the offer.");
                     }
-                    else // Rolls 19-20 (10% chance) Gives the player a strength-boosting item
-                    {
-                        SlowWrite("Without a word, he hands you a strange, glowing stone.");
-                        player.AddItemToInventory(new Item("Glowing Stone", "A stone that pulses with raw power.", strengthBonus: 2));
-                    }
-                    return;
+                }
+                else if (roll <= 18) // 40% chance: Compliments the player
+                {
+                    SlowWrite("\"You look strong,\" he says, and continues on his way.");
+                }
+                else // 10% chance: Gives the player a strength-boosting item
+                {
+                    SlowWrite("Without a word, he hands you a strange, glowing stone.");
+                    player.AddItemToInventory(new Item("Glowing Stone", "A stone that pulses with raw power.", strengthBonus: 2));
+                }
+            }
+            else // High health
+            {
+                SlowWrite("He returns his gaze to the road and continues on his way.");
+            }
+        }
+
+        // Helper method for the third+ encounter with the Mysteriousfigure
+        private static void HandleNewFigureEncounter(Character player)
+        {
+            SlowWrite("A new figure is at the crossroads. What will you do?");
+            Console.WriteLine("1. Greet the new figure.");
+            Console.WriteLine("2. Attack him.");
+            Console.WriteLine("3. Ignore him.");
+            Console.Write("Enter your choice: ");
+            string choice = Console.ReadLine() ?? "3";
+
+            if (choice == "1")
+            {
+                // This logic is similar to the first encounters, but could be changed later.
+                HandleFirstFigureEncounters(player);
+            }
+            else if (choice == "2")
+            {
+                SlowWrite("You attack the figure without warning!");
+                Character figure = new Character("Mysterious Figure") { BaseStrength = 8, CurrentHealth = 50 };
+                if (BattleManager.StartCombat(player, figure))
+                {
+                    SlowWrite("You have defeated the mysterious figure!");
+                    player.AddGold(15);
                 }
             }
             else
             {
-                switch (true)
-                {
-                    case bool when player.CurrentHealth <= player.MaxHealth * 0.3: // Low health (30% or less)
-                        SlowWrite("\"You look like you're in rough shape,\" he says, performing a quick ritual.");
-                        double healthRestored = player.MaxHealth * 0.5; // Restore 50% of max health
-                        player.CurrentHealth += healthRestored;
-                        // Clamp health to the max health. Math.Min is a clean way to do this.
-                        player.CurrentHealth = Math.Min(player.CurrentHealth, player.MaxHealth);
-                        Console.WriteLine($"You feel a surge of vitality! Your health is now {player.CurrentHealth:F1}.");
-                        break;
-
-                    case bool when player.CurrentHealth <= player.MaxHealth * 0.80: // Medium health
-                        SlowWrite("Fate will decide your path.");
-                        // Use the shared Random instance and an if/else if chain for clarity.
-                        int roll = BattleManager.RollDice(20); // d20 roll (1 to 20)
-                        if (roll <= 5)// Rolls 1-5 (25% chance) Attacks the player
-                        {
-                            SlowWrite("\"You look a bit weak,\" he says with a hungry look in his eyes... He attacks!");
-                            Character figure = new Character("Mysterious Figure") { BaseStrength = 8, CurrentHealth = 50 };
-
-                            if (BattleManager.StartCombat(player, figure))
-                            {
-                                SlowWrite("\"You have defeated the mysterious figure and taken his belongings!\"");
-                                Item figureLoot = new("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
-                                player.AddItemToInventory(figureLoot);
-                                player.AddGold(15);
-                                return;
-                            }
-                        }
-                        else if (roll <= 10) // Rolls 6-10 (25% chance) Offers to sell a potion
-                        {
-                            SlowWrite("\"I'll sell you a health potion if you need it friend,\" he says, profering you a potion.");
-                            Item healthPotion = new Item("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true);
-                            Pause();
-                            Console.Write("Do you want to buy the health potion for 10 gold? (yes/no): ");
-                            string response = Console.ReadLine()?.Trim().ToLower() ?? "no";
-                            if (response == "yes")
-                            {
-                                if (player.SpendGold(10))
-                                {
-                                    player.AddItemToInventory(healthPotion);
-                                    Console.WriteLine("You purchased the health potion.");
-                                }
-                                else
-                                {
-                                    Console.WriteLine("You don't have enough gold to buy the potion.");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("You declined the offer.");
-                            }
-                        }
-                        else if (roll <= 18) // Rolls 11-18 (40% chance) Compliments the player
-                        {
-                            SlowWrite("\"You look strong,\" he says, and continues on his way.");
-
-                        }
-                        else // Rolls 19-20 (10% chance) Gives the player a strength-boosting item
-                        {
-                            SlowWrite("Without a word, he hands you a strange, glowing stone.");
-                            player.AddItemToInventory(new Item("Glowing Stone", "A stone that pulses with raw power.", strengthBonus: 2));
-                        }
-                        break;
-                    default: // High health, he just ignores the player
-                        SlowWrite("He returns his gaze to the road and continues on his way.");
-                        break;
-                }
-                figureEncounters++; // Increment the encounter counter
-                Pause();
+                SlowWrite("You ignore the figure, and they watch you pass in silence.");
             }
         }
         private static void TownShop(Character player) // Shop Menu
@@ -413,6 +390,8 @@ namespace GameProject
                         TownShop(player);
                         break;
                     case 6:
+                        player.Save(); // Save the game before quitting
+                        SlowWrite("Game saved. Goodbye!");
                         return false; // Exit the game loop
                     default:
                         Console.WriteLine("Invalid choice. Please select a valid option.");
@@ -426,26 +405,66 @@ namespace GameProject
             return true; // Signal to continue the game
         }
 
+        private static Character CreateNewCharacter()
+        {
+            Console.WriteLine("\n--- Character Creation ---");
+            Console.Write("Please enter your character's name (or press Enter for 'Player1'): ");
+            string playerNameInput = Console.ReadLine() ?? string.Empty;
+            string playerName = string.IsNullOrEmpty(playerNameInput) ? "Player1" : playerNameInput;
+
+            Character player = new Character(playerName);
+            player.AddItemToInventory(new Item("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true)); // Starting item
+            player.Save(); // Save the newly created character
+
+            SlowWrite($"\nHello, {player.Name}! Your adventure begins now.");
+            return player;
+        }
+
         static void Main(string[] args) // Entry point of the game
         {
             Console.Clear();
-            SlowWrite("Welcome to Jacks Game Project! This is a work in progress!");
-            SlowWrite("This is an Adventure RPG!");
-            Console.Write("Enter your character's name (press Enter for default): ");
-            string playerNameInput = Console.ReadLine() ?? string.Empty;
-            string playerName = string.IsNullOrEmpty(playerNameInput) ? "Player1" : playerNameInput; // default name if none provided
-            Character player = new Character(playerName);
+            SlowWrite("Welcome to Jacks Adventure RPG Game Project! This is a work in progress!");
+            Pause();
 
-            player.AddItemToInventory(new Item("Health Potion", "A swirling red liquid that restores 30 health.", healingAmount: 30, isConsumable: true)); // Starting health potion
+            Character? player = null;
+            string saveDataPath = Path.Combine(AppContext.BaseDirectory, "SaveData");
+            string[] saveFiles = Directory.Exists(saveDataPath) ? Directory.GetFiles(saveDataPath, "*_CharacterData.txt") : Array.Empty<string>();
 
-            SlowWrite($"Hello, {player.Name}! Your adventure begins now.");
+            if (saveFiles.Length > 0)
+            {
+                Console.WriteLine("\nSaved games found:");
+                for (int i = 0; i < saveFiles.Length; i++)
+                {
+                    string characterName = Path.GetFileNameWithoutExtension(saveFiles[i]).Replace("_CharacterData", "");
+                    Console.WriteLine($"{i + 1}. {characterName}");
+                }
+                Console.WriteLine("N. Start a New Game");
+                Console.Write("Choose a save to load, or start a new game: ");
+
+                string choice = Console.ReadLine()?.Trim().ToUpper() ?? "N";
+                if (int.TryParse(choice, out int fileIndex) && fileIndex > 0 && fileIndex <= saveFiles.Length)
+                {
+                    player = Character.Load(saveFiles[fileIndex - 1]);
+                    if (player != null)
+                    {
+                        SlowWrite($"\nWelcome back, {player.Name}!");
+                    }
+                }
+            }
+
+            // If player is still null (no saves, chose new game, or load failed), create a new character.
+            if (player == null)
+            {
+                player = CreateNewCharacter();
+            }
 
             bool gameIsRunning = true;
-            while (gameIsRunning && player.IsAlive())
+            // The player object could theoretically still be null if creation fails, so we check.
+            while (gameIsRunning && player != null && player.IsAlive())
             {
                 gameIsRunning = ShowCrossroadsMenu(player);
             }
-            if (!player.IsAlive())
+            if (player != null && !player.IsAlive())
             {
                 SlowWrite("\nYou have fallen. Your adventure ends here.");
             }
