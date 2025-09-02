@@ -232,10 +232,9 @@ namespace GameProject
             }
             else
             {
-
                 switch (true)
                 {
-                    case bool _ when player.CurrentHealth <= player.MaxHealth * 0.3: // Low health (30% or less)
+                    case bool when player.CurrentHealth <= player.MaxHealth * 0.3: // Low health (30% or less)
                         SlowWrite("\"You look like you're in rough shape,\" he says, performing a quick ritual.");
                         double healthRestored = player.MaxHealth * 0.5; // Restore 50% of max health
                         player.CurrentHealth += healthRestored;
@@ -244,7 +243,7 @@ namespace GameProject
                         Console.WriteLine($"You feel a surge of vitality! Your health is now {player.CurrentHealth:F1}.");
                         break;
 
-                    case bool _ when player.CurrentHealth <= player.MaxHealth * 0.80: // Medium health
+                    case bool when player.CurrentHealth <= player.MaxHealth * 0.80: // Medium health
                         SlowWrite("Fate will decide your path.");
                         // Use the shared Random instance and an if/else if chain for clarity.
                         int roll = BattleManager.RollDice(20); // d20 roll (1 to 20)

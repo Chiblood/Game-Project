@@ -6,6 +6,7 @@ class BattleManager
         Console.ReadLine();
     }
     internal static Random rand = new Random(); // Random number generator
+
     /// <summary>
     /// Rolls a dice with the specified number of sides.
     /// </summary>
@@ -15,6 +16,7 @@ class BattleManager
     {
         return rand.Next(1, sides + 1);
     }
+
     /// <summary>
     /// Manages a turn-based combat loop between two characters.
     /// </summary>
