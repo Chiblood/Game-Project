@@ -58,7 +58,14 @@ class Character
             Directory.CreateDirectory(saveDataPath); // This ensures the directory exists.
 
             Console.WriteLine($"Your character's data will be saved in: {saveDataPath}");
-            string fileName = $"{Name}_CharacterData.txt";
+            // Prevent repeated _CharacterData.txt in the filename
+            string baseName = Name;
+            string suffix = "_CharacterData.txt";
+            if (baseName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                baseName = baseName.Substring(0, baseName.Length - suffix.Length);
+            }
+            string fileName = $"{baseName}{suffix}";
             string fullPath = Path.Combine(saveDataPath, fileName);
 
             using (StreamWriter writer = new(fullPath))
